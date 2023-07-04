@@ -45,6 +45,9 @@ auto Trie::Put(std::string_view key, T value) const -> Trie {
   size_t key_len = key.size();
   size_t i = 0;
   auto cur = std::shared_ptr<TrieNode>(std::move(root_->Clone()));
+  if (key_len == 0) {
+    cur = std::make_shared<TrieNodeWithValue<T>>(cur->children_, std::make_shared<T>(std::move(value)));
+  }
   auto new_root = cur;
   auto prev = cur;
   while (i < key_len) {
