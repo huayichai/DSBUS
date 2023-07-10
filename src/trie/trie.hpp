@@ -245,6 +245,7 @@ class Trie {
     if (key_len == 0) {
       return false;
     }
+    latch_.WLock();
     auto node = &root_;
     auto prev = node;
     for (; i < key_len; ++i) {
@@ -256,11 +257,13 @@ class Trie {
     }
     if (i == key_len) {
       if ((*node)->IsEndNode()) {
+        latch_.WUnlock();
         return false;
       } else {
         auto value_node = std::make_unique<TrieNodeWithValue<T>>(std::move(*(node->get())), value);
         (*prev)->RemoveChildNode(key[i - 1]);
         (*prev)->InsertChildNode(key[i - 1], std::move(value_node));
+        latch_.WUnlock();
         return true;
       }
     }
@@ -269,10 +272,12 @@ class Trie {
         node = (*node)->InsertChildNode(key[i], std::make_unique<TrieNode>(key[i]));
       } else {
         (*node)->InsertChildNode(key[i], std::make_unique<TrieNodeWithValue<T>>(key[i], value));
+        latch_.WUnlock();
         return true;
       }
       ++i;
     }
+    latch_.WUnlock();
     return true;
   }
 
@@ -293,15 +298,18 @@ class Trie {
    */
   bool Remove(const std::string &key) {
     std::vector<TrieNode *> path;
+    latch_.WLock();
     auto node = &root_;
     for (auto c : key) {
       path.push_back(node->get());
       node = (*node)->GetChildNode(c);
       if (node == nullptr) {
+        latch_.WUnlock();
         return false;
       }
     }
     if (!(*node)->IsEndNode()) {
+      latch_.WUnlock();
       return false;
     }
     int last_idx = path.size() - 1;
@@ -313,6 +321,7 @@ class Trie {
       value_node->SetEndNode(false);
       prev->RemoveChildNode(value_node->GetKeyChar());
       prev->InsertChildNode(value_node->GetKeyChar(), std::move(value_node));
+      latch_.WUnlock();
       return true;
     }
     while (i >= 0 && ((cur->ChildNum() == 0 && !cur->IsEndNode()) || i == last_idx)) {
@@ -320,6 +329,7 @@ class Trie {
       cur = prev;
       prev = path[--i];
     }
+    latch_.WUnlock();
     return true;
   }
 
@@ -340,25 +350,30 @@ class Trie {
    * @return Value of type T if type matches
    */
   template <typename T>
-  T GetValue(const std::string &key, bool *success) const {
+  T GetValue(const std::string &key, bool *success) {
     *success = false;
     auto key_len = key.size();
     if (key_len == 0) {
       return {};
     }
+    latch_.RLock();
     auto node = &root_;
     for (auto c : key) {
       node = (*node)->GetChildNode(c);
       if (node == nullptr) {
+        latch_.RUnlock();
         return {};
       }
     }
     auto value_node = dynamic_cast<TrieNodeWithValue<T> *>(node->get());
     if (value_node == nullptr) {
+      latch_.RUnlock();
       return {};
     }
     *success = true;
-    return value_node->GetValue();
+    T v = value_node->GetValue();
+    latch_.RUnlock();
+    return v;
   }
 
  private:

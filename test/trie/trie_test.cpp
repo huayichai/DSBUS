@@ -218,7 +218,7 @@ TEST(TrieTest, MixTest) {
   }
 }
 
-TEST(StarterTrieTest, DISABLED_ConcurrentTest1) {
+TEST(TrieTest, ConcurrentTest1) {
   Trie trie;
   constexpr int num_words = 1000;
   constexpr int num_bits = 10;
@@ -255,5 +255,73 @@ TEST(StarterTrieTest, DISABLED_ConcurrentTest1) {
   threads.clear();
 }
 
+TEST(TrieTest, ConcurrentTest2) {
+  Trie trie;
+  constexpr int num_words = 1000;
+  constexpr int num_bits = 10;
+  for (int i = 0; i < num_words; i++) {
+    std::string key = std::bitset<num_bits>(i).to_string();
+    trie.Insert<int>(key, i);
+  }
+
+  constexpr int parallel = 10;
+  std::vector<std::thread> threads;
+  threads.reserve(parallel * 2);
+  
+  auto remore_task = [&](const int begin, const int end) {
+    bool success = false;
+    for (int i = begin; i < end; ++i) {
+      std::string key = std::bitset<num_bits>(i).to_string();
+      success = trie.Remove(key);
+      EXPECT_EQ(success, true);
+    }
+  };
+
+  auto get_task = [&](const int begin, const int end) {
+    bool success = false;
+    for (int i = begin; i < end; ++i) {
+      std::string key = std::bitset<num_bits>(i).to_string();
+      auto tval = trie.GetValue<int>(key, &success);
+      EXPECT_EQ(success, true);
+      EXPECT_EQ(tval, i);
+    }
+  };
+
+  auto insert_task = [&](const int begin, const int end) {
+    bool success = false;
+    for (int i = begin; i < end; ++i) {
+      std::string key = std::bitset<15>(i).to_string();
+      success = trie.Insert<int>(key, i);
+      EXPECT_EQ(success, true);
+    }
+  };
+
+  int batch = num_words / parallel;
+  for (int i = 0; i < parallel; i += 2) {
+    int begin = i * batch;
+    int end = (i + 1) * batch >= num_words ? num_words : (i + 1) * batch;
+    threads.emplace_back(std::thread{remore_task, begin, end});
+  }
+  for (int i = 1; i < parallel; i += 2) {
+    int begin = i * batch;
+    int end = (i + 1) * batch >= num_words ? num_words : (i + 1) * batch;
+    threads.emplace_back(std::thread{get_task, begin, end});
+  }
+
+  threads.emplace_back(std::thread{insert_task, 1001, 1500});
+
+  for (size_t i = 0; i < threads.size(); i++) {
+    threads[i].join();
+  }
+  threads.clear();
+
+  for (int i = 1001; i < 1500; ++i) {
+    bool success = false;
+    std::string key = std::bitset<15>(i).to_string();
+    auto tval = trie.GetValue<int>(key, &success);
+    EXPECT_EQ(success, true);
+    EXPECT_EQ(tval, i);
+  }
+}
 
 } // dsbus
