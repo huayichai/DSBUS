@@ -3,7 +3,7 @@ set(BUILD_SHARED_LIBS OFF)              # We expect external libraries to be lin
 set(CMAKE_CXX_STANDARD 17)              # Compile as C++17.
 set(CMAKE_CXX_STANDARD_REQUIRED ON)     # Require C++17 support.
 
-project(ConcurrentTrie VERSION 2023.07)
+project(DataStructureBus VERSION 2023.07)
 
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to `Debug` as none was specified.")

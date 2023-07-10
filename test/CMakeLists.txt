@@ -28,7 +28,8 @@ foreach (dsbus_test_source ${DSBUS_TEST_SOURCES})
             TIMEOUT 120
             )
 
-    target_link_libraries(${dsbus_test_name} dsbus gtest gmock_main)
+#     target_link_libraries(${dsbus_test_name} dsbus gtest gmock_main)
+    target_link_libraries(${dsbus_test_name} gtest gmock_main)
 
     # Set test target properties and dependencies.
     set_target_properties(${dsbus_test_name}

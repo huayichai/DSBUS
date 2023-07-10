@@ -1,7 +1,7 @@
 #include <fmt/format.h>
 #include <numeric>
 
-#include "Trie/cow_trie.hpp"
+#include "trie/cow_trie.hpp"
 #include "gtest/gtest.h"
 
 namespace dsbus {
@@ -245,7 +245,7 @@ TEST(COWTrieTest, NonCopyableTest) {
   ASSERT_EQ(trie.Get<Integer>("test"), nullptr);
 }
 
-// ========== TEST for COWTrie ==========
+// ========== TEST for COWTrieStore ==========
 
 TEST(COWTrieStoreTest, BasicTest) {
   auto store = COWTrieStore();
@@ -352,8 +352,5 @@ TEST(COWTrieStoreTest, MixedConcurrentTest) {
     ASSERT_EQ(**guard, value);
   }
 }
-
-
-
 
 } // dsbus
