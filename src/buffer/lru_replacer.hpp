@@ -16,7 +16,7 @@ public:
      *  @brief Create a new LRUReplacer.
      *  @param num_pages the maximum number of pages the LRUReplacer will be required to store
      */
-    explicit LRUReplacer(size_t num_pages) {
+    explicit LRUReplacer(const size_t num_pages) {
         for (size_t i = 0; i < num_pages; ++i) {
             free_list_.push_back((frame_id_t)i);
             free_map_[(frame_id_t)i] = std::prev(free_list_.end());
